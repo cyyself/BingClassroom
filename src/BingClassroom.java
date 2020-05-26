@@ -4,6 +4,7 @@ import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 enum DrawTool {
     EMPTY,PEN,RECT,RECTF,CIR,LINE,TRI,ERASER,MOVE
@@ -17,7 +18,7 @@ class Main {
     public static Map<Long,Shape> graph_store;
     public static void main(String[] argv) {
         ran = new Random();
-        graph_store = new HashMap<Long,Shape>();
+        graph_store = new ConcurrentHashMap<Long,Shape>();
         app = new OpenGLApp();
     }
     public static void setShape(Long id, Shape g) {
