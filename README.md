@@ -21,3 +21,7 @@
 ## 为什么起这个名字？
 
 雨课堂->雷课堂->靐课堂
+
+## 服务端程序
+
+[BingClassroomServer](https://github.com/cyyself/BingClassroomServer)
