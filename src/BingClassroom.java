@@ -393,7 +393,7 @@ class ServerConn {
                         to_put.move_enable = param[9].equals("1");
                         Main.graph_store.put(Long.parseLong(param[10]),to_put);
                     }
-                    else if (param.equals("triangle")) {
+                    else if (param[0].equals("triangle")) {
                         MyTriangle to_put = new MyTriangle(
                                 new MyPoint(Integer.parseInt(param[1]),Integer.parseInt(param[2])),
                                 new MyPoint(Integer.parseInt(param[3]),Integer.parseInt(param[4])),
@@ -404,6 +404,7 @@ class ServerConn {
                         to_put.move_enable = param[9].equals("1");
                         Main.graph_store.put(Long.parseLong(param[12]),to_put);
                     }
+                    else System.out.println("error");
                 } catch (IOException e) {
                     conn = false;
                 }
