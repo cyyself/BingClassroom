@@ -61,20 +61,7 @@ class Board extends JPanel {
         }
         if (preview != null) preview.draw(g);
     }
-    Thread auto_refresh = new Thread() {
-        public void run() {
-            while (true) {
-                repaint();
-                try {
-                    Thread.sleep(15);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
     Board() {
-        auto_refresh.start();
         setBackground(Color.WHITE);
         var that = this;
         addMouseMotionListener(new MouseMotionListener() {
@@ -87,9 +74,11 @@ class Board extends JPanel {
                         Main.setShape(Main.ran.nextLong(),ng);
                         mouse_x = mouseEvent.getX();
                         mouse_y = mouseEvent.getY();
+                        repaint();
                         break;
                     case LINE:
                         preview = new MyLine(new MyPoint(mouse_x,mouse_y),new MyPoint(mouseEvent.getX(),mouseEvent.getY()),Main.foreColor);
+                        repaint();
                         break;
                     case ERASER:
                         mouse_x = mouseEvent.getX();
@@ -100,15 +89,19 @@ class Board extends JPanel {
                                 break;
                             }
                         }
+                        repaint();
                         break;
                     case RECT:
                         preview = new MyRectangle(new MyPoint(mouse_x,mouse_y),new MyPoint(mouseEvent.getX(),mouseEvent.getY()),Main.foreColor);
+                        repaint();
                         break;
                     case RECTF:
                         preview = new MyRectangleFill(new MyPoint(mouse_x,mouse_y),new MyPoint(mouseEvent.getX(),mouseEvent.getY()),Main.foreColor);
+                        repaint();
                         break;
                     case CIR:
                         preview = new MyCircle(new MyPoint(mouse_x,mouse_y),new MyPoint(mouseEvent.getX(),mouseEvent.getY()),Main.foreColor);
+                        repaint();
                         break;
                     case MOVE:
                         if (cur_sel != -1L) {
@@ -119,6 +112,7 @@ class Board extends JPanel {
                             mouse_x = mouseEvent.getX();
                             mouse_y = mouseEvent.getY();
                         }
+                        repaint();
                         break;
                     default:
                         break;
@@ -129,9 +123,11 @@ class Board extends JPanel {
                 if (Main.ToolSel != DrawTool.TRI) triangle_step = 0;
                 if (triangle_step == 1) {
                     preview = new MyLine(new MyPoint(mouse_x,mouse_y),new MyPoint(mouseEvent.getX(),mouseEvent.getY()),Main.foreColor);
+                    repaint();
                 }
                 else if (triangle_step == 2) {
                     preview = new MyTriangle(preview.p1,preview.p2,new MyPoint(mouseEvent.getX(), mouseEvent.getY()),Main.foreColor);
+                    repaint();
                 }
             }
         });
@@ -150,6 +146,7 @@ class Board extends JPanel {
                             break;
                         }
                     }
+                    repaint();
                 }
                 else if (Main.ToolSel == DrawTool.TRI) {
                     if (triangle_step == 0) {
@@ -164,10 +161,12 @@ class Board extends JPanel {
                         triangle_step = 0;
                         preview = null;
                     }
+                    repaint();
                 }
             }
             @Override
             public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
                 switch (Main.ToolSel) {
                     case RECT:
                     case RECTF:
@@ -175,17 +174,18 @@ class Board extends JPanel {
                     case LINE:
                         if (preview != null) Main.setShape(Main.ran.nextLong(),preview);
                         preview = null;
+                        repaint();
                         break;
                     case MOVE:
                         if (cur_sel != -1L) {
                             Main.setShape(cur_sel,Main.graph_store.get(cur_sel));
                             cur_sel = -1L;
                         }
+                        repaint();
                         break;
                     default:
                         break;
                 }
-                super.mouseReleased(e);
             }
         });
     }
