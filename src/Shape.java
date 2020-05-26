@@ -110,7 +110,7 @@ class MyCircle extends Shape {
         double xx = x - cx;
         double yy = y - cy;
         double a = Math.max(p1.x,p2.x) - cx;
-        double b = Math.max(p1.x,p2.y) - cy;
+        double b = Math.max(p1.y,p2.y) - cy;
         return xx * xx / (a * a) + yy * yy / (b * b) <= 1.0;
     }
     void draw(Graphics g) {
