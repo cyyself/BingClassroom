@@ -1,11 +1,9 @@
 import java.awt.*;
-
 abstract public class Shape {
     public MyPoint p1,p2;
     public Color clr;
     public int size = 4;
     public boolean move_enable = true;
-    abstract public Boolean inShape(int x, int y);
     void draw(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setStroke(new BasicStroke(size));
@@ -17,7 +15,8 @@ abstract public class Shape {
         p2.x += dx;
         p2.y += dy;
     }
-    //TODO: Serialize
+    abstract public Boolean inShape(int x, int y);
+    abstract String serialize();
 }
 class MyLine extends Shape {
     MyLine(MyPoint _p1,MyPoint _p2,Color _clr) {
@@ -44,6 +43,10 @@ class MyLine extends Shape {
             return s <= size * len;
         }
         else return false;
+    }
+    @Override
+    String serialize() {
+        return String.format("line %d %d %d %d %d %d %d %d %d",p1.x,p1.y,p2.x,p2.y,clr.getRed(),clr.getGreen(),clr.getBlue(),size,move_enable?1:0);
     }
 }
 
@@ -73,6 +76,11 @@ class MyRectangle extends Shape {
         int y2 = Math.max(p1.y,p2.y);
         g.drawRect(x1,y1,x2-x1,y2-y1);
     }
+
+    @Override
+    String serialize() {
+        return String.format("rect %d %d %d %d %d %d %d %d %d",p1.x,p1.y,p2.x,p2.y,clr.getRed(),clr.getGreen(),clr.getBlue(),size,move_enable?1:0);
+    }
 }
 class MyRectangleFill extends Shape {
     public MyRectangleFill(MyPoint _p1,MyPoint _p2,Color _clr) {
@@ -95,6 +103,11 @@ class MyRectangleFill extends Shape {
         int y1 = Math.min(p1.y,p2.y);
         int y2 = Math.max(p1.y,p2.y);
         g.fillRect(x1,y1,x2-x1,y2-y1);
+    }
+
+    @Override
+    String serialize() {
+        return String.format("rectf %d %d %d %d %d %d %d %d %d",p1.x,p1.y,p2.x,p2.y,clr.getRed(),clr.getGreen(),clr.getBlue(),size,move_enable?1:0);
     }
 }
 class MyCircle extends Shape {
@@ -120,6 +133,11 @@ class MyCircle extends Shape {
         int y1 = Math.min(p1.y,p2.y);
         int y2 = Math.max(p1.y,p2.y);
         g.fillOval(x1,y1,x2-x1,y2-y1);
+    }
+
+    @Override
+    String serialize() {
+        return String.format("circle %d %d %d %d %d %d %d %d %d",p1.x,p1.y,p2.x,p2.y,clr.getRed(),clr.getGreen(),clr.getBlue(),size,move_enable?1:0);
     }
 }
 class MyTriangle extends Shape{
@@ -150,5 +168,10 @@ class MyTriangle extends Shape{
         super.move(dx,dy);
         p3.x += dx;
         p3.y += dy;
+    }
+
+    @Override
+    String serialize() {
+        return String.format("triangle %d %d %d %d %d %d %d %d %d %d %d",p1.x,p1.y,p2.x,p2.y,clr.getRed(),clr.getGreen(),clr.getBlue(),size,move_enable?1:0,p3.x,p3.y);
     }
 }

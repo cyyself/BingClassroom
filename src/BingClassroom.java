@@ -1,6 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -16,22 +22,42 @@ class Main {
     public static DrawTool ToolSel = DrawTool.PEN;
     public static Color foreColor = Color.black;
     public static Map<Long,Shape> graph_store;
+    public static ServerConn conn;
     public static void main(String[] argv) {
         ran = new Random();
-        graph_store = new ConcurrentHashMap<Long,Shape>();
+        graph_store = new ConcurrentHashMap<Long,Shape>();//ConcurrentHashMap自带线程安全
         app = new OpenGLApp();
+        conn = new ServerConn();
+        String server_addr = JOptionPane.showInputDialog("请输入服务器地址:端口。若要本地使用请点击取消");
+        if (server_addr != null) {
+            int pos = server_addr.lastIndexOf(':');
+            String host;
+            int port;
+            if (pos == -1) {
+                host = server_addr;
+                port = 2333;
+            }
+            else {
+                host = server_addr.substring(0,pos);
+                port = Integer.parseInt(server_addr.substring(pos+1));
+            }
+            boolean stat = conn.connect(host,port);
+            if (!stat) {
+                JOptionPane.showMessageDialog(new JFrame(), "连接服务器失败，自动回落到本地使用", "错误", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
     public static void setShape(Long id, Shape g) {
         graph_store.put(id,g);
-        //TODO: send to tcp socket
+        if (conn.conn) conn.out.println(g.serialize()+" "+id.toString());
     }
     public static void delShape(Long id) {
         graph_store.remove(id);
-        //TODO: send to tcp socket
+        if (conn.conn) conn.out.println("delete "+id.toString());
     }
     public static void clearShapes() {
         graph_store.clear();
-        //TODO: send to tcp socket
+        if (conn.conn) conn.out.println("clear");
     }
 }
 class OpenGLApp extends JFrame{
@@ -173,7 +199,9 @@ class Board extends JPanel {
                     case RECTF:
                     case CIR:
                     case LINE:
-                        if (preview != null) Main.setShape(Main.ran.nextLong(),preview);
+                        if (preview != null) {
+                            Main.setShape(Main.ran.nextLong(),preview);
+                        }
                         preview = null;
                         repaint();
                         break;
@@ -303,4 +331,103 @@ class Toolbox extends JPanel {
             }
         });
     }
+}
+class ServerConn {
+    public String addr;
+    public boolean conn = false;
+    private Socket client;
+    BufferedReader buf;
+    PrintStream out;
+    Thread recv = new Thread() {
+        public void run() {
+            while (conn) {
+                try {
+                    String data = buf.readLine();
+                    if (data == null || data.equals("")) {
+                        conn = false;
+                    }
+                    String[] param = data.split(" ");
+                    if (param[0].equals("clear")) {
+                        Main.graph_store.clear();
+                    }
+                    else if (param[0].equals("delete")) {
+                        Main.graph_store.remove(Long.parseLong(param[1]));
+                    }
+                    else if (param[0].equals("circle")) {
+                        MyCircle to_put = new MyCircle(
+                                new MyPoint(Integer.parseInt(param[1]),Integer.parseInt(param[2])),
+                                new MyPoint(Integer.parseInt(param[3]),Integer.parseInt(param[4])),
+                                new Color(Integer.parseInt(param[5]),Integer.parseInt(param[6]),Integer.parseInt(param[7]))
+                        );
+                        to_put.size = Integer.parseInt(param[8]);
+                        to_put.move_enable = param[9].equals("1");
+                        Main.graph_store.put(Long.parseLong(param[10]),to_put);
+                    }
+                    else if (param[0].equals("line")) {
+                        MyLine to_put = new MyLine(
+                                new MyPoint(Integer.parseInt(param[1]),Integer.parseInt(param[2])),
+                                new MyPoint(Integer.parseInt(param[3]),Integer.parseInt(param[4])),
+                                new Color(Integer.parseInt(param[5]),Integer.parseInt(param[6]),Integer.parseInt(param[7]))
+                        );
+                        to_put.size = Integer.parseInt(param[8]);
+                        to_put.move_enable = param[9].equals("1");
+                        Main.graph_store.put(Long.parseLong(param[10]),to_put);
+                    }
+                    else if (param[0].equals("rect")) {
+                        MyRectangle to_put = new MyRectangle(
+                                new MyPoint(Integer.parseInt(param[1]),Integer.parseInt(param[2])),
+                                new MyPoint(Integer.parseInt(param[3]),Integer.parseInt(param[4])),
+                                new Color(Integer.parseInt(param[5]),Integer.parseInt(param[6]),Integer.parseInt(param[7]))
+                        );
+                        to_put.size = Integer.parseInt(param[8]);
+                        to_put.move_enable = param[9].equals("1");
+                        Main.graph_store.put(Long.parseLong(param[10]),to_put);
+                    }
+                    else if (param[0].equals("rectf")) {
+                        MyRectangleFill to_put = new MyRectangleFill(
+                                new MyPoint(Integer.parseInt(param[1]),Integer.parseInt(param[2])),
+                                new MyPoint(Integer.parseInt(param[3]),Integer.parseInt(param[4])),
+                                new Color(Integer.parseInt(param[5]),Integer.parseInt(param[6]),Integer.parseInt(param[7]))
+                        );
+                        to_put.size = Integer.parseInt(param[8]);
+                        to_put.move_enable = param[9].equals("1");
+                        Main.graph_store.put(Long.parseLong(param[10]),to_put);
+                    }
+                    else if (param.equals("triangle")) {
+                        MyTriangle to_put = new MyTriangle(
+                                new MyPoint(Integer.parseInt(param[1]),Integer.parseInt(param[2])),
+                                new MyPoint(Integer.parseInt(param[3]),Integer.parseInt(param[4])),
+                                new MyPoint(Integer.parseInt(param[10]),Integer.parseInt(param[11])),
+                                new Color(Integer.parseInt(param[5]),Integer.parseInt(param[6]),Integer.parseInt(param[7]))
+                        );
+                        to_put.size = Integer.parseInt(param[8]);
+                        to_put.move_enable = param[9].equals("1");
+                        Main.graph_store.put(Long.parseLong(param[12]),to_put);
+                    }
+                } catch (IOException e) {
+                    conn = false;
+                }
+                catch (NullPointerException e) {
+                    conn = false;
+                }
+                Main.app.canvas.repaint();
+            }
+            JOptionPane.showMessageDialog(new JFrame(), "与服务器失去连接", "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    };
+    public Boolean connect(String host,int port) {
+        try {
+            client = new Socket(host,port);
+            buf = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            out = new PrintStream(client.getOutputStream(),true);
+        } catch (IOException e) {
+            conn = false;
+            System.out.println("error");
+            return false;
+        }
+        conn = true;
+        recv.start();
+        return true;
+    }
+
 }
